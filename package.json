@@ -1,0 +1,39 @@
+{
+  "name": "cogeai",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "AI-powered command generator — describe what you want, get a shell command back",
+  "main": "coge.js",
+  "bin": {
+    "coge": "coge.js"
+  },
+  "files": [
+    "coge.js",
+    "providers/",
+    "lib/",
+    "bin/",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "sync-models": "node bin/sync-models.js",
+    "postinstall": "node lib/init-config.js"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "llm",
+    "command-generator",
+    "shell"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vovanmozg/coge.git"
+  },
+  "dependencies": {
+    "@google/genai": "^1.7.0",
+    "clipboardy": "^4.0.0"
+  }
+}
