@@ -96,7 +96,8 @@ export function getAvailableModels(providerName) {
   return defaultConfig.providers[providerName]?.available ?? [];
 }
 
-const PROVIDER_ENV_KEYS = {
+/** Env var name per provider (null = no key, e.g. ollama). */
+export const PROVIDER_ENV_KEYS = {
   gemini: "COGE_GEMINI_API_KEY",
   openrouter: "COGE_OPENROUTER_API_KEY",
   openai: "COGE_OPENAI_API_KEY",
@@ -137,6 +138,16 @@ export function getProvider(config) {
   }
   const envKey = PROVIDER_ENV_KEYS[name];
   const apiKey = envKey ? process.env[envKey] : undefined;
+  if (envKey && !apiKey) {
+    const configured = getConfiguredProviders();
+    const hint =
+      configured.length > 0
+        ? ` Configured providers: ${configured.join(", ")}. Run 'coge configure' to switch.`
+        : ` Run 'coge configure' to set up a provider.`;
+    throw new Error(
+      `Provider "${name}" requires ${envKey}. Set it: export ${envKey}=your-key.${hint}`
+    );
+  }
   const model = config.model ?? config.models?.[name];
   return factory(apiKey, model);
 }

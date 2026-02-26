@@ -3,7 +3,7 @@
 import readline from "readline";
 import { execSync } from "child_process";
 import { loadConfig, writeDefaultConfigIfMissing, writeConfig, getConfigPath, defaultConfig } from "./lib/config.js";
-import { getProvider, getConfiguredProviders, getDefaultModels, PROVIDER_MODELS, PROVIDER_FETCH_MODELS, PROVIDER_PAGE_URLS, getAvailableModels } from "./providers/index.js";
+import { getProvider, getConfiguredProviders, getDefaultModels, PROVIDER_MODELS, PROVIDER_FETCH_MODELS, PROVIDER_PAGE_URLS, getAvailableModels, PROVIDER_ENV_KEYS } from "./providers/index.js";
 import { loadBanditState, saveBanditState, updateArm, pickProviders } from "./lib/bandit.js";
 import { recordAction, loadStats, formatStats } from "./lib/stats.js";
 import { normalizeAvailableEntry, sortByCategory, isBlacklisted } from "./lib/model-classify.js";
@@ -399,16 +399,23 @@ Providers: ${PROVIDERS.join(", ")}`);
     const { selected, banditArms } = pickProviders(config, configured, defaultModels, 3);
     if (debug && banditArms) console.log(`Bandit arms: ${banditArms.join(", ")}`);
 
+    if (selected.length === 0) {
+      const envVars = [...new Set(Object.values(PROVIDER_ENV_KEYS).filter(Boolean))].sort().join(", ");
+      throw new Error(
+        `No provider configured. Set one of: ${envVars} — or run 'coge configure'.`
+      );
+    }
+
     let command;
     let winnerArm;
     const startTime = Date.now();
 
-    if (selected.length <= 1) {
-      // 0 or 1 configured — use the user's configured provider directly
-      const provider = getProvider(config);
+    if (selected.length === 1) {
+      const providerName = selected[0];
+      const provider = getProvider({ ...config, provider: providerName });
       command = await provider.generateContent(systemPrompt, promptText);
-      const model = config.providers?.[config.provider]?.default ?? defaultModels[config.provider] ?? config.model ?? "unknown";
-      winnerArm = `${config.provider}:${model}`;
+      const model = config.providers?.[providerName]?.default ?? defaultModels[providerName] ?? config.model ?? "unknown";
+      winnerArm = `${providerName}:${model}`;
     } else {
       if (debug) {
         console.log(`Racing providers: ${selected.join(", ")}`);
@@ -473,7 +480,16 @@ Providers: ${PROVIDERS.join(", ")}`);
   }
 
   main().catch((err) => {
-    console.error("Error:", err);
+    const msg = err?.message ?? String(err);
+    const isConfigError =
+      msg.includes("No provider configured") ||
+      msg.includes("not set") ||
+      (msg.includes("requires ") && msg.includes("export "));
+    if (isConfigError) {
+      console.error("coge:", msg);
+    } else {
+      console.error("Error:", err);
+    }
     process.exit(1);
   });
 }

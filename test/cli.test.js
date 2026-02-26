@@ -65,7 +65,7 @@ describe("CLI", () => {
       timeout: 5000,
     }, (err, stdout, stderr) => {
       assert.notEqual(err, null);
-      assert.match(stderr, /API_KEY not set/);
+      assert.match(stderr, /No provider configured|requires COGE_GEMINI_API_KEY|API_KEY not set/);
       done();
     });
   });

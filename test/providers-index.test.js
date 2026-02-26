@@ -76,6 +76,19 @@ describe("getProvider", () => {
     assert.equal(provider.name, "gemini");
   });
 
+  it("throws with helpful message when provider needs API key but it is not set", () => {
+    delete process.env.COGE_GEMINI_API_KEY;
+    assert.throws(
+      () => getProvider({ provider: "gemini", model: "m", providers: {} }),
+      (err) => {
+        assert.match(err.message, /Provider "gemini" requires COGE_GEMINI_API_KEY/);
+        assert.match(err.message, /export COGE_GEMINI_API_KEY=/);
+        assert.match(err.message, /coge configure/);
+        return true;
+      }
+    );
+  });
+
   it("throws on unknown provider", () => {
     assert.throws(
       () => getProvider({ provider: "unknown", model: "m", providers: {} }),
